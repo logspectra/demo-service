@@ -1,0 +1,8 @@
+logspectra:
+  enabled: false
+  project-id: test-project-id
+  service-name: gateway-service
+
+gateway:
+  demo-logs:
+    enabled: false

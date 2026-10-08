@@ -1,0 +1,52 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: gateway-service
+
+logspectra:
+  enabled: true
+  service-name: gateway-service
+  # UUID of a project created in LogSpectra UI / backend (PostgreSQL).
+  # Override: LOGSPECTRA_PROJECT_ID env var or -Dlogspectra.project-id=...
+  project-id: ${LOGSPECTRA_PROJECT_ID:3f347bb4-e61e-4957-a45a-929b1ae7bcfe}
+  kafka:
+    enabled: true
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    # Must match logspectra-backend kafka.topics.service-logs
+    topic: service-logs
+  # Posted to logspectra-backend on startup → Redis (code-aware AI)
+  code-source:
+    git-url: ${LOGSPECTRA_GIT_URL:https://github.com/example/gateway-service.git}
+    default-branch: main
+    # Path as seen by the BACKEND host (same laptop / shared volume). Optional.
+    local-path: ${LOGSPECTRA_CODE_LOCAL_PATH:${user.home}/Developer/project/gateway-service}
+    source-roots:
+      - src/main/java
+  registry:
+    enabled: true
+    backend-url: ${LOGSPECTRA_BACKEND_URL:http://localhost:8081}
+    token: ${LOGSPECTRA_REGISTRY_TOKEN:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+gateway:
+  demo-logs:
+    enabled: true
+    fast-interval-ms: 400
+    medium-interval-ms: 2000
+    slow-interval-ms: 7000
+    burst-interval-ms: 12000
+    # ERROR batch each tick for LogSpectra error-rate charts (3 errors/s by default)
+    error-interval-ms: 1000
+    errors-per-tick: 3
+
+logging:
+  level:
+    root: INFO
+    com.example.gateway: DEBUG
