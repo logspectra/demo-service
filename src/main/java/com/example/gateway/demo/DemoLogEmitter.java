@@ -1,5 +1,6 @@
 package com.example.gateway.demo;
 
+import com.example.gateway.checkout.CheckoutUpstreamService;
 import com.logspectra.mdc.LogSpectraMdc;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -21,14 +22,16 @@ public class DemoLogEmitter {
     private static final Logger log = LoggerFactory.getLogger(DemoLogEmitter.class);
 
     private final DemoLogsProperties properties;
+    private final CheckoutUpstreamService checkoutUpstreamService;
     private final AtomicLong fastSeq = new AtomicLong();
     private final AtomicLong mediumSeq = new AtomicLong();
     private final AtomicLong slowSeq = new AtomicLong();
     private final AtomicLong burstSeq = new AtomicLong();
     private final AtomicLong errorSeq = new AtomicLong();
 
-    public DemoLogEmitter(DemoLogsProperties properties) {
+    public DemoLogEmitter(DemoLogsProperties properties, CheckoutUpstreamService checkoutUpstreamService) {
         this.properties = properties;
+        this.checkoutUpstreamService = checkoutUpstreamService;
     }
 
     @PostConstruct
@@ -92,12 +95,18 @@ public class DemoLogEmitter {
 
     private void emitScheduledError(long seq, int indexInBatch, int batchSize) {
         if (indexInBatch % 2 == 0) {
-            log.error(
-                    "gateway upstream failure route=/api/checkout status=502 seq={} batch={}/{} upstream=cart-service",
-                    seq,
-                    indexInBatch,
-                    batchSize,
-                    new RuntimeException("connection reset by peer"));
+            int cartItemCount = seq % 2 == 0 ? 0 : 2;
+            try {
+                checkoutUpstreamService.forwardToCartService(cartItemCount);
+            } catch (Exception ex) {
+                log.error(
+                        "gateway upstream failure route=/api/checkout status=502 seq={} batch={}/{} upstream=cart-service cartItems={}",
+                        seq,
+                        indexInBatch,
+                        batchSize,
+                        cartItemCount,
+                        ex);
+            }
         } else {
             log.error(
                     "rate limit exceeded clientId=demo-{} route=/api/catalog batch={}/{}",

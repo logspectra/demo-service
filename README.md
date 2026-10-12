@@ -66,9 +66,17 @@ mvn spring-boot:run
 curl "http://localhost:8082/api/hello?name=logspectra"
 curl "http://localhost:8082/api/error-demo"   # expect HTTP 500 + error log in UI
 curl "http://localhost:8082/api/error-burst?count=20"   # 20 ERROR lines to Kafka (HTTP 200)
+curl "http://localhost:8082/api/checkout?cartItems=0" # checkout bug demo (502 + stack trace in LogSpectra)
 ```
 
-With `gateway.demo-logs.enabled=true`, the app also emits **3 ERROR logs per second** automatically (`errors-per-tick`).
+With `gateway.demo-logs.enabled=true`, the app also emits **3 ERROR logs per second** automatically (`errors-per-tick`). Half of the checkout errors hit an **intentional empty-cart bug** in `CheckoutUpstreamService` (`10 / cartItemCount`) so LogSpectra **Debug** + **remediation PR** can patch `src/main/java/.../CheckoutUpstreamService.java` on GitHub.
+
+### LogSpectra remediation demo
+
+1. Push this repo to `LOGSPECTRA_GIT_URL` (default `https://github.com/logspectra/gateway-service.git`).
+2. Enable GitHub App on the backend (`SETUP-GITHUB-APP.md` in logspectra-backend).
+3. In UI: Log Explorer → `gateway-service` ERROR → enable **Open GitHub remediation PR** → **Debug**.
+4. Expected fix: guard `cartItemCount == 0` before retry-budget math; backend uses one branch per issue (`logspectra/fix-gateway-service-<fp>`) — repeat Debug updates that branch and reuses the open PR.
 
 In the UI, filter by service **gateway-service** and your project.
 

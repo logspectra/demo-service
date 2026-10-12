@@ -1,5 +1,6 @@
 package com.example.gateway.api;
 
+import com.example.gateway.checkout.CheckoutUpstreamService;
 import com.example.gateway.demo.DemoErrorBurstService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,15 +20,39 @@ public class DemoController {
     private static final Logger log = LoggerFactory.getLogger(DemoController.class);
 
     private final DemoErrorBurstService errorBurstService;
+    private final CheckoutUpstreamService checkoutUpstreamService;
 
-    public DemoController(DemoErrorBurstService errorBurstService) {
+    public DemoController(DemoErrorBurstService errorBurstService, CheckoutUpstreamService checkoutUpstreamService) {
         this.errorBurstService = errorBurstService;
+        this.checkoutUpstreamService = checkoutUpstreamService;
     }
 
     @GetMapping("/hello")
     public ResponseEntity<Map<String, String>> hello(@RequestParam(defaultValue = "world") String name) {
         log.info("Hello request received for name={}", name);
         return ResponseEntity.ok(Map.of("message", "Hello, " + name));
+    }
+
+    /**
+     * Triggers the same checkout proxy path as scheduled demo errors (empty cart → defect).
+     */
+    @GetMapping("/checkout")
+    public ResponseEntity<Map<String, Object>> checkout(
+            @RequestParam(defaultValue = "0") int cartItems) {
+        try {
+            checkoutUpstreamService.forwardToCartService(cartItems);
+            return ResponseEntity.ok(Map.of("route", "/api/checkout", "status", 200, "cartItems", cartItems));
+        } catch (Exception ex) {
+            log.error(
+                    "gateway upstream failure route=/api/checkout status=502 upstream=cart-service cartItems={}",
+                    cartItems,
+                    ex);
+            return ResponseEntity.status(502).body(Map.of(
+                    "route", "/api/checkout",
+                    "status", 502,
+                    "cartItems", cartItems,
+                    "error", ex.getClass().getSimpleName()));
+        }
     }
 
     @GetMapping("/error-demo")

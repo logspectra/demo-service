@@ -18,7 +18,8 @@ logspectra:
     topic: service-logs
   # Posted to logspectra-backend on startup → Redis (code-aware AI)
   code-source:
-    git-url: ${LOGSPECTRA_GIT_URL:https://github.com/example/gateway-service.git}
+    # Must match the GitHub repo where LogSpectra opens remediation PRs (GitHub App installed).
+    git-url: ${LOGSPECTRA_GIT_URL:https://github.com/logspectra/gateway-service.git}
     default-branch: main
     # Path as seen by the BACKEND host (same laptop / shared volume). Optional.
     local-path: ${LOGSPECTRA_CODE_LOCAL_PATH:${user.home}/Developer/project/gateway-service}
