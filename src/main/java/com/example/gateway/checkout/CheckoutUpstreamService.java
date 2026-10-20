@@ -15,10 +15,9 @@ public class CheckoutUpstreamService {
      * @param cartItemCount number of line items in the cart (0 = empty checkout attempt)
      */
     public void forwardToCartService(int cartItemCount) {
-        if (cartItemCount < 0) {
-            throw new IllegalArgumentException("cartItemCount cannot be negative");
+        if (cartItemCount <= 0) {
+            throw new IllegalArgumentException("cartItemCount must be greater than zero");
         }
-        // ponytail: demo bug — empty cart should return 4xx, not hit divide-by-zero below
         int retryBudget = 3 + (10 / cartItemCount);
         if (retryBudget < 1) {
             throw new IllegalStateException("cart-service unavailable: retry budget exhausted");
